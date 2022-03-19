@@ -6,6 +6,26 @@ pub mod gates;
 pub mod prelude;
 pub mod simulator;
 
+#[macro_export]
+macro_rules! carray {
+    ( $([$($x: expr),*]),* ) => {{
+        use num::complex::Complex;
+        array![
+            $([$(Complex::new($x, 0.)),*]),*
+        ]
+    }};
+}
+
+#[macro_export]
+macro_rules! carray_i {
+    ( $([$($x: expr),*]),* ) => {{
+        use num::complex::Complex;
+        array![
+            $([$(Complex::new(0., $x)),*]),*
+        ]
+    }};
+}
+
 ///
 /// A type for the result of the measurement of a qubit.
 ///

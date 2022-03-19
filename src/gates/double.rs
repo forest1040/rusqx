@@ -1,11 +1,11 @@
-use crate::Qubit;
+use crate::{carray, carray_i, Qubit};
 use ndarray::prelude::*;
 use num::complex::Complex;
 use once_cell::sync::Lazy;
 
 #[derive(Debug)]
 pub struct DoubleGate {
-    matrix: Array2<Complex<f64>>,
+    pub matrix: Array2<Complex<f64>>,
 }
 
 macro_rules! gen_gates {
@@ -19,24 +19,6 @@ macro_rules! gen_gates {
     ($($ms: ident),*) => {
         $(gen_gates!($ms);)*
     };
-}
-
-macro_rules! carray {
-    ( $([$($x: expr),*]),* ) => {{
-        use num::complex::Complex;
-        array![
-            $([$(Complex::new($x, 0.)),*]),*
-        ]
-    }};
-}
-
-macro_rules! carray_i {
-    ( $([$($x: expr),*]),* ) => {{
-        use num::complex::Complex;
-        array![
-            $([$(Complex::new(0., $x)),*]),*
-        ]
-    }};
 }
 
 pub trait DoubleGateApplicator {
