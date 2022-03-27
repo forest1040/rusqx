@@ -5,7 +5,7 @@ use once_cell::sync::Lazy;
 
 #[derive(Debug)]
 pub struct SingleGate {
-    pub matrix: Array2<Complex<f64>>,
+    matrix: Array2<Complex<f64>>,
 }
 
 macro_rules! gen_gates {
@@ -29,11 +29,11 @@ pub trait SingleGateApplicator {
 
     gen_gates!(H, X, Y, Z, ID);
 
-    fn phase(&mut self, phi: f64, qubit: &Qubit) {
-        let mut matrix = carray![[1., 0.], [0., 0.]];
-        matrix[[1, 1]] = Complex::new(phi.cos(), phi.sin());
-        self.apply_single(&matrix, qubit);
-    }
+    // fn phase(&mut self, phi: f64, qubit: &Qubit) {
+    //     let mut matrix = carray![[1., 0.], [0., 0.]];
+    //     matrix[[1, 1]] = Complex::new(phi.cos(), phi.sin());
+    //     self.apply_single(&matrix, qubit);
+    // }
 }
 
 pub static H: Lazy<SingleGate> = {

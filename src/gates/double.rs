@@ -5,7 +5,7 @@ use once_cell::sync::Lazy;
 
 #[derive(Debug)]
 pub struct DoubleGate {
-    pub matrix: Array2<Complex<f64>>,
+    matrix: Array2<Complex<f64>>,
 }
 
 macro_rules! gen_gates {
@@ -29,16 +29,16 @@ pub trait DoubleGateApplicator {
 
     gen_gates!(CNOT, SWAP, SQSWAP);
 
-    fn cphase(&mut self, phi: f64, qubit1: &Qubit, qubit2: &Qubit) {
-        let mut matrix = carray![
-            [1., 0., 0., 0.],
-            [0., 1., 0., 0.],
-            [0., 0., 1., 0.],
-            [0., 0., 0., 0.]
-        ];
-        matrix[[3, 3]] = Complex::new(phi.cos(), phi.sin());
-        self.apply_double(&matrix, qubit1, qubit2);
-    }
+    // fn cphase(&mut self, phi: f64, qubit1: &Qubit, qubit2: &Qubit) {
+    //     let mut matrix = carray![
+    //         [1., 0., 0., 0.],
+    //         [0., 1., 0., 0.],
+    //         [0., 0., 1., 0.],
+    //         [0., 0., 0., 0.]
+    //     ];
+    //     matrix[[3, 3]] = Complex::new(phi.cos(), phi.sin());
+    //     self.apply_double(&matrix, qubit1, qubit2);
+    // }
 }
 
 pub static CNOT: Lazy<DoubleGate> = {

@@ -5,7 +5,7 @@ use once_cell::sync::Lazy;
 
 #[derive(Debug)]
 pub struct TripleGate {
-    pub matrix: Array2<Complex<f64>>,
+    matrix: Array2<Complex<f64>>,
 }
 
 macro_rules! gen_gates {
