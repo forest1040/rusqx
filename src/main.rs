@@ -20,12 +20,22 @@ fn main() {
         set(&mut sim, &qubits[2], MeasuredResult::Zero);
         set(&mut sim, &qubits[3], MeasuredResult::Zero);
 
-        //sim.X(&qubits[0]);
-        //sim.H(&qubits[1]);
-        //sim.show();
-        //sim.H(&qubits[2]);
+        // sim.X(&qubits[0]);
+        // sim.X(&qubits[1]);
+        // sim.X(&qubits[2]);
+
+        // sim.H(&qubits[1]);
+        // sim.show();
+        // sim.H(&qubits[2]);
+
         sim.X(&qubits[0]);
         sim.CNOT(&qubits[0], &qubits[1]);
+
+        // sim.X(&qubits[1]);
+        // sim.CNOT(&qubits[1], &qubits[0]);
+
+        // sim.X(&qubits[2]);
+        // sim.CNOT(&qubits[2], &qubits[1]);
 
         // sim.X(&qubits[2]);
         // sim.CNOT(&qubits[2], &qubits[3]);
