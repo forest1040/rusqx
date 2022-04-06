@@ -25,7 +25,7 @@ impl QuantumSimulator {
 
         let masks = mask_vec(qubits);
 
-        for i in 0..(self.states.len() >> qubits_size) {
+        for i in 0..self.dim >> qubits_size {
             let indices = indices_vec(i, qubits, &masks, qubits_size);
             let values = indices.iter().map(|&i| self.states[i]).collect::<Vec<_>>();
             let new_values = matrix.dot(&arr1(&values));
@@ -36,7 +36,7 @@ impl QuantumSimulator {
     }
 
     pub fn show(&self) {
-        for i in 0..self.states.len() {
+        for i in 0..self.dim {
             println!("{:0>4b}> {}", i, self.states[i]);
         }
     }
@@ -47,12 +47,9 @@ fn mask_vec(qubits: &[&Qubit]) -> Vec<usize> {
     qubits.sort_by(|a, b| a.index.cmp(&b.index));
     let mut res = vec![0; qubits.len() + 1];
 
-    // 最後のqubitsのindex+1分を左シフトする(upper_mask的)
     res[0] = 0xFFFF_FFFF_FFFF_FFFFusize << (qubits[qubits.len() - 1].index + 1);
 
     for i in 1..qubits.len() {
-        // 後ろから見ていく
-        // bitのorを取る
         res[i] = (0xFFFF_FFFF_FFFF_FFFFusize << (qubits[qubits.len() - i - 1].index + 1))
             | (!(0xFFFF_FFFF_FFFF_FFFFusize << (qubits[qubits.len() - i].index)));
     }
@@ -86,7 +83,7 @@ impl QuantumMachine for QuantumSimulator {
         //     self.re.clone() * self.re.clone() + self.im.clone() * self.im.clone()
         // }
         // 0が測定される確率（各量子ビット毎の0が測定される確率の合計）
-        let zero_norm_sqr: f64 = (0..(self.states.len() >> 1))
+        let zero_norm_sqr: f64 = (0..self.dim >> 1)
             .map(|i| self.states[index_pair(i, qubit, upper_mask, lower_mask).0].norm_sqr())
             .sum();
 
@@ -95,7 +92,7 @@ impl QuantumMachine for QuantumSimulator {
         //if zero_norm_sqr > rng.gen::<f64>() {
         if zero_norm_sqr > rand::random::<f64>() {
             let norm = zero_norm_sqr.sqrt();
-            for i in 0..(self.states.len() >> 1) {
+            for i in 0..self.dim >> 1 {
                 let (iz, io) = index_pair(i, qubit, upper_mask, lower_mask);
                 self.states[iz] /= norm;
                 self.states[io] = Complex::new(0., 0.);
@@ -103,7 +100,7 @@ impl QuantumMachine for QuantumSimulator {
             MeasuredResult::Zero
         } else {
             let norm = (1. - zero_norm_sqr).sqrt();
-            for i in 0..(self.states.len() >> 1) {
+            for i in 0..self.dim >> 1 {
                 let (iz, io) = index_pair(i, qubit, upper_mask, lower_mask);
                 self.states[io] /= norm;
                 self.states[iz] = Complex::new(0., 0.);
@@ -174,6 +171,7 @@ impl DoubleGateApplicator for QuantumSimulator {
         let max_qubit_index = cmp::max(qubit1.index, qubit2.index);
         let min_qubit_mask = 1usize << min_qubit_index;
         let max_qubit_mask = 1usize << (max_qubit_index - 1);
+        // 間の部分（例えば2bitゲートでindexが0と2の場合、間のゲートがないindex1の部分）
         let low_mask = min_qubit_mask - 1;
         let mid_mask = (max_qubit_mask - 1) ^ low_mask;
         let high_mask = !(max_qubit_mask - 1);
@@ -320,12 +318,12 @@ mod tests {
 
         let qubit = Qubit { index: 0 };
         let (upper_mask, lower_mask) = mask_pair(&qubit);
-        let zero_norm_sqr: f64 = (0..(states.len() >> 1))
+        let zero_norm_sqr: f64 = (0..states.len() >> 1)
             .map(|i| states[index_pair(i, &qubit, upper_mask, lower_mask).0].norm_sqr())
             .sum();
         println!("zero_norm_sqr: {}", zero_norm_sqr);
 
-        for i in 0..(states.len() >> 1) {
+        for i in 0..states.len() >> 1 {
             println!("i:{} {:0>8b}", i, i);
             let (iz, io) = index_pair(i, &qubit, upper_mask, lower_mask);
             // 2進数 8桁表示
@@ -342,9 +340,10 @@ mod tests {
     fn test_mask_vec() {
         let qubit = Qubit { index: 0 };
         let masks = mask_vec(&[&qubit]);
-        println!("masks: {:?}", masks);
+        println!("masks  : {:?}", masks);
         for mask in &masks {
-            println!("mask: {:02X}", *mask);
+            //println!("mask: {:02X}", mask);
+            println!("mask   : {:04b}", mask);
         }
         let qubit1 = Qubit { index: 0 };
         let qubit2 = Qubit { index: 1 };
@@ -352,7 +351,8 @@ mod tests {
         println!("{:?}", masks);
         for i in 0..masks.len() {
             let mask = masks[i];
-            println!("mask[{}]: {:02X}", i, mask);
+            //println!("mask[{}]: {:02X}", i, mask);
+            println!("mask[{}]: {:04b}", i, mask);
         }
         let qubit1 = Qubit { index: 0 };
         let qubit2 = Qubit { index: 1 };
@@ -361,15 +361,29 @@ mod tests {
         println!("{:?}", masks);
         for i in 0..masks.len() {
             let mask = masks[i];
-            println!("mask[{}]: {:02X}", i, mask);
+            //println!("mask[{}]: {:02X}", i, mask);
+            println!("mask[{}]: {:04b}", i, mask);
         }
-        let qubit1 = Qubit { index: 2 };
-        let qubit2 = Qubit { index: 1 };
+        let qubit1 = Qubit { index: 1 };
+        let qubit2 = Qubit { index: 2 };
         let masks = mask_vec(&[&qubit1, &qubit2]);
         println!("{:?}", masks);
         for i in 0..masks.len() {
             let mask = masks[i];
-            println!("mask[{}]: {:02X}", i, mask);
+            //println!("mask[{}]: {:02X}", i, mask);
+            println!("mask[{}]: {:04b}", i, mask);
+        }
+    }
+
+    #[test]
+    fn test_mask_vec2() {
+        let qubit1 = Qubit { index: 1 };
+        let qubit2 = Qubit { index: 3 };
+        let qubit3 = Qubit { index: 5 };
+        let masks = mask_vec(&[&qubit1, &qubit2, &qubit3]);
+        println!("{:?}", masks);
+        for i in 0..masks.len() {
+            println!("mask[{}]: {:04b}", i, masks[i]);
         }
     }
 
