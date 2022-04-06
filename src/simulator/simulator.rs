@@ -72,6 +72,68 @@ fn indices_vec(index: usize, qubits: &[&Qubit], mask: &[usize], qubits_size: usi
         .collect()
 }
 
+// pub fn mask_vec2(qubits: &[&Qubit]) -> (usize, usize, usize) {
+//     //    let qubits_size = qubits.len();
+//     let min_qubit_index = qubits.iter().map(|q| q.index).min().unwrap();
+//     let max_qubit_index = qubits.iter().map(|q| q.index).max().unwrap();
+//     let min_qubit_mask = 1usize << min_qubit_index;
+//     let max_qubit_mask = 1usize << max_qubit_index;
+//     let mask_low = min_qubit_mask;
+//     let mask_high = !(max_qubit_mask - 1);
+//     (max_qubit_mask, mask_low, mask_high)
+// }
+
+//pub fn mask_vec2(qubits: &[&Qubit]) -> (usize, usize, usize) {
+pub fn mask_vec2(qubits: &[&Qubit]) -> Vec<usize> {
+    let min_qubit_index = qubits.iter().map(|q| q.index).min().unwrap();
+    let max_qubit_index = qubits.iter().map(|q| q.index).max().unwrap();
+    let min_qubit_mask = 1usize << min_qubit_index;
+    let max_qubit_mask = 1usize
+        << if qubits.len() > 1 {
+            max_qubit_index - 1
+        } else {
+            max_qubit_index
+        };
+    let mask_low = min_qubit_mask - 1;
+    let mask_high = !(max_qubit_mask - 1);
+    //(max_qubit_mask, mask_low, mask_high)
+    let mut res = Vec::with_capacity(3);
+    res.push(max_qubit_mask);
+    res.push(mask_low);
+    res.push(mask_high);
+    res
+}
+
+pub fn indices_vec2(index: usize, qubits: &[&Qubit], masks: &[usize]) -> Vec<usize> {
+    let mut qubits = qubits.to_owned();
+    qubits.sort_by(|a, b| a.index.cmp(&b.index));
+    let mut res = Vec::with_capacity(qubits.len());
+    let mask = masks[0];
+    let mask_low = masks[1];
+    let mask_high = masks[2];
+    let basis_0 = (index & mask_low) + ((index & mask_high) << qubits.len());
+    res.push(basis_0);
+    // for i in 1..qubits.len() << 1 {
+    //     let basis = basis_0 + mask;
+    //     res.push(basis);
+    // }
+    if qubits.len() == 1 {
+        let basis_1 = basis_0 + mask;
+        res.push(basis_1);
+    } else if qubits.len() == 2 {
+        let target_mask1 = 1usize << qubits[1].index;
+        let target_mask2 = 1usize << qubits[0].index;
+        let basis_1 = basis_0 + target_mask1;
+        let basis_2 = basis_0 + target_mask2;
+        let basis_3 = basis_1 + target_mask2;
+        res.push(basis_1);
+        res.push(basis_2);
+        res.push(basis_3);
+    }
+
+    res
+}
+
 impl QuantumMachine for QuantumSimulator {
     fn measure(&mut self, qubit: &Qubit) -> MeasuredResult {
         let (upper_mask, lower_mask) = mask_pair(qubit);
@@ -177,8 +239,8 @@ impl DoubleGateApplicator for QuantumSimulator {
         let high_mask = !(max_qubit_mask - 1);
         // let target_mask1 = 1 << qubit1.index;
         // let target_mask2 = 1 << qubit2.index;
-        let target_mask1 = 1 << qubit2.index;
-        let target_mask2 = 1 << qubit1.index;
+        let target_mask1 = 1usize << qubit2.index;
+        let target_mask2 = 1usize << qubit1.index;
         // loop variables
         for state_index in 0..self.dim >> qubits_size {
             // create index
