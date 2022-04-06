@@ -36,21 +36,6 @@ mod tests {
     }
 
     #[test]
-    fn test_single_gate2() {
-        let dim = 16;
-        let qubit1 = &Qubit { index: 1 };
-        let qubits = &[qubit1];
-        let masks = mask_vec2(qubits);
-        println!("mask:{:04b}", masks[0]);
-        println!("mask_low:{:04b}", masks[1]);
-        println!("mask_high:{:04b}", masks[2]);
-        for state_index in 0..dim >> qubits.len() {
-            let indices = indices_vec2(state_index, qubits, &masks);
-            println!("i[{}] {:?}", state_index, indices);
-        }
-    }
-
-    #[test]
     fn test_double_gate() {
         let qubit1 = &Qubit { index: 0 };
         let qubit2 = &Qubit { index: 1 };
@@ -103,6 +88,21 @@ mod tests {
             let basis_2 = basis_0 + target_mask2;
             let basis_3 = basis_1 + target_mask2;
             println!("{} {} {} {}", basis_0, basis_1, basis_2, basis_3);
+        }
+    }
+
+    #[test]
+    fn test_single_gate2() {
+        let dim = 16;
+        let qubit1 = &Qubit { index: 1 };
+        let qubits = &[qubit1];
+        let masks = mask_vec2(qubits);
+        println!("mask:{:04b}", masks[0]);
+        println!("mask_low:{:04b}", masks[1]);
+        println!("mask_high:{:04b}", masks[2]);
+        for state_index in 0..dim >> qubits.len() {
+            let indices = indices_vec2(state_index, qubits, &masks);
+            println!("i[{}] {:?}", state_index, indices);
         }
     }
 
