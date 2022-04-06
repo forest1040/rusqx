@@ -1,12 +1,5 @@
-// use crate::gates::double::DoubleGateApplicator;
-// use crate::gates::single::SingleGateApplicator;
-// use crate::gates::triple::TripleGateApplicator;
-use crate::{carray, carray_i, MeasuredResult, QuantumMachine, Qubit};
-// use ndarray::prelude::*;
-// use num::complex::Complex;
-// use rand::{self, Rng};
+use crate::Qubit;
 use std::cmp;
-//use crate::simulator::mask
 
 #[cfg(test)]
 mod tests {
@@ -52,18 +45,6 @@ mod tests {
         println!("mask_low:{:04b}", masks[1]);
         println!("mask_high:{:04b}", masks[2]);
         for state_index in 0..dim >> qubits.len() {
-            // println!("state_index        : {:0>4b}", state_index);
-            // println!(
-            //     "(state_index & mask_low): {:0>4b}",
-            //     (state_index & mask_low)
-            // );
-            // println!(
-            //     "((state_index & mask_high) << 1): {:0>4b}",
-            //     ((state_index & mask_high) << 1)
-            // );
-            // let basis_0 = (state_index & mask_low) + ((state_index & mask_high) << 1);
-            // let basis_1 = basis_0 + mask;
-            //println!("{} {}", basis_0, basis_1);
             let indices = indices_vec2(state_index, qubits, &masks);
             println!("i[{}] {:?}", state_index, indices);
         }
@@ -131,34 +112,13 @@ mod tests {
         let qubit1 = &Qubit { index: 3 };
         let qubit2 = &Qubit { index: 2 };
         let qubits = &[qubit1, qubit2];
-        //let (mask, mask_low, mask_high) = mask_vec2(qubits);
         let masks = mask_vec2(qubits);
         println!("mask:{:04b}", masks[0]);
         println!("mask_low:{:04b}", masks[1]);
         println!("mask_high:{:04b}", masks[2]);
-        // let mask = masks[0];
-        // let mask_low = masks[1];
-        // let mask_high = masks[2];
         for state_index in 0..dim >> qubits.len() {
             let indices = indices_vec2(state_index, qubits, &masks);
             println!("i[{}] {:?}", state_index, indices);
-
-            // // create index
-            // let basis_0 = (state_index & mask_low) + (state_index & mask_high << qubits.len());
-            // println!("state_index        : {:0>4b}", state_index);
-            // println!(
-            //     "(state_index & mask_low): {:0>4b}",
-            //     (state_index & mask_low)
-            // );
-            // println!(
-            //     "((state_index & high_mask) << 2): {:0>4b}",
-            //     ((state_index & mask_high) << 2)
-            // );
-            // // gather index
-            // let basis_1 = basis_0 + target_mask1;
-            // let basis_2 = basis_0 + target_mask2;
-            // let basis_3 = basis_1 + target_mask2;
-            // println!("{} {} {} {}", basis_0, basis_1, basis_2, basis_3);
         }
     }
 }

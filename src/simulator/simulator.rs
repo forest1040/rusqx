@@ -72,18 +72,6 @@ fn indices_vec(index: usize, qubits: &[&Qubit], mask: &[usize], qubits_size: usi
         .collect()
 }
 
-// pub fn mask_vec2(qubits: &[&Qubit]) -> (usize, usize, usize) {
-//     //    let qubits_size = qubits.len();
-//     let min_qubit_index = qubits.iter().map(|q| q.index).min().unwrap();
-//     let max_qubit_index = qubits.iter().map(|q| q.index).max().unwrap();
-//     let min_qubit_mask = 1usize << min_qubit_index;
-//     let max_qubit_mask = 1usize << max_qubit_index;
-//     let mask_low = min_qubit_mask;
-//     let mask_high = !(max_qubit_mask - 1);
-//     (max_qubit_mask, mask_low, mask_high)
-// }
-
-//pub fn mask_vec2(qubits: &[&Qubit]) -> (usize, usize, usize) {
 pub fn mask_vec2(qubits: &[&Qubit]) -> Vec<usize> {
     let min_qubit_index = qubits.iter().map(|q| q.index).min().unwrap();
     let max_qubit_index = qubits.iter().map(|q| q.index).max().unwrap();
@@ -96,7 +84,6 @@ pub fn mask_vec2(qubits: &[&Qubit]) -> Vec<usize> {
         };
     let mask_low = min_qubit_mask - 1;
     let mask_high = !(max_qubit_mask - 1);
-    //(max_qubit_mask, mask_low, mask_high)
     let mut res = Vec::with_capacity(3);
     res.push(max_qubit_mask);
     res.push(mask_low);
@@ -129,6 +116,9 @@ pub fn indices_vec2(index: usize, qubits: &[&Qubit], masks: &[usize]) -> Vec<usi
         res.push(basis_1);
         res.push(basis_2);
         res.push(basis_3);
+    } else {
+        // TODO
+        unimplemented!();
     }
 
     res
