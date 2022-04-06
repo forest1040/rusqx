@@ -35,6 +35,7 @@ impl QuantumSimulator {
         }
     }
 
+    // TODO: applyの廃止
     fn apply2(&mut self, qubits: &[&Qubit], matrix: &Array2<Complex<f64>>) {
         let masks = mask_vec2(qubits);
         for i in 0..self.dim >> qubits.len() {
@@ -47,6 +48,7 @@ impl QuantumSimulator {
         }
     }
 
+    // TODO: apply2と統合
     fn apply_with_ctrl(
         &mut self,
         qubits_ctrl: &[&Qubit],
@@ -55,7 +57,7 @@ impl QuantumSimulator {
     ) {
         let masks = mask_vec2(qubits);
         for i in 0..self.dim >> qubits.len() {
-            let indices = indices_vec2(i, qubits, &masks);
+            let indices = indices_vec_with_ctrl(i, qubits_ctrl, qubits, &masks);
             let values = indices.iter().map(|&i| self.states[i]).collect::<Vec<_>>();
             let new_values = matrix.dot(&arr1(&values));
             for (&i, nv) in indices.iter().zip(new_values.to_vec()) {
@@ -101,6 +103,7 @@ fn indices_vec(index: usize, qubits: &[&Qubit], mask: &[usize], qubits_size: usi
         .collect()
 }
 
+// TODO: mask_vecの廃止
 pub fn mask_vec2(qubits: &[&Qubit]) -> Vec<usize> {
     let min_qubit_index = qubits.iter().map(|q| q.index).min().unwrap();
     let max_qubit_index = qubits.iter().map(|q| q.index).max().unwrap();
@@ -120,6 +123,7 @@ pub fn mask_vec2(qubits: &[&Qubit]) -> Vec<usize> {
     res
 }
 
+// TODO: indices_vecの廃止
 pub fn indices_vec2(index: usize, qubits: &[&Qubit], masks: &[usize]) -> Vec<usize> {
     let mut qubits = qubits.to_owned();
     qubits.sort_by(|a, b| a.index.cmp(&b.index));
@@ -153,14 +157,13 @@ pub fn indices_vec2(index: usize, qubits: &[&Qubit], masks: &[usize]) -> Vec<usi
     res
 }
 
+// TODO: indices_vec2と統合
 pub fn indices_vec_with_ctrl(
     index: usize,
     qubits_ctrl: &[&Qubit],
     qubits: &[&Qubit],
     masks: &[usize],
 ) -> Vec<usize> {
-    println!("indices_vec_with_ctrl");
-
     let mut qubits = qubits.to_owned();
     qubits.sort_by(|a, b| a.index.cmp(&b.index));
     let mut res = Vec::with_capacity(qubits.len());
