@@ -21,19 +21,35 @@ macro_rules! gen_gates {
     };
 }
 
+macro_rules! gen_gates_with_ctrl {
+    ($mat: ident) => {
+        #[allow(non_snake_case)]
+        fn $mat(&mut self, qubit_ctrl: &Qubit, qubit: &Qubit) {
+            self.apply_single_with_ctrl(&$mat.matrix, qubit_ctrl, qubit);
+        }
+    };
+
+    ($($ms: ident),*) => {
+        $(gen_gates_with_ctrl!($ms);)*
+    };
+}
+
 pub trait SingleGateApplicator {
     ///
     /// An operation for the given unitary matrix `matrix` to `qubit`
     ///
     fn apply_single(&mut self, matrix: &Array2<Complex<f64>>, qubit: &Qubit);
 
+    fn apply_single_with_ctrl(
+        &mut self,
+        matrix: &Array2<Complex<f64>>,
+        qubit_ctrl: &Qubit,
+        qubit: &Qubit,
+    );
+
     gen_gates!(H, X, Y, Z, ID);
 
-    // fn phase(&mut self, phi: f64, qubit: &Qubit) {
-    //     let mut matrix = carray![[1., 0.], [0., 0.]];
-    //     matrix[[1, 1]] = Complex::new(phi.cos(), phi.sin());
-    //     self.apply_single(&matrix, qubit);
-    // }
+    gen_gates_with_ctrl!(X_C);
 }
 
 pub static H: Lazy<SingleGate> = {
@@ -42,6 +58,11 @@ pub static H: Lazy<SingleGate> = {
     })
 };
 pub static X: Lazy<SingleGate> = {
+    Lazy::new(|| SingleGate {
+        matrix: carray![[0., 1.], [1., 0.]],
+    })
+};
+pub static X_C: Lazy<SingleGate> = {
     Lazy::new(|| SingleGate {
         matrix: carray![[0., 1.], [1., 0.]],
     })

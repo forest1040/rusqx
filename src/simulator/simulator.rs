@@ -47,6 +47,23 @@ impl QuantumSimulator {
         }
     }
 
+    fn apply_with_ctrl(
+        &mut self,
+        qubits_ctrl: &[&Qubit],
+        qubits: &[&Qubit],
+        matrix: &Array2<Complex<f64>>,
+    ) {
+        let masks = mask_vec2(qubits);
+        for i in 0..self.dim >> qubits.len() {
+            let indices = indices_vec2(i, qubits, &masks);
+            let values = indices.iter().map(|&i| self.states[i]).collect::<Vec<_>>();
+            let new_values = matrix.dot(&arr1(&values));
+            for (&i, nv) in indices.iter().zip(new_values.to_vec()) {
+                self.states[i] = nv;
+            }
+        }
+    }
+
     pub fn show(&self) {
         for i in 0..self.dim {
             println!("{:0>4b}> {}", i, self.states[i]);
@@ -136,6 +153,43 @@ pub fn indices_vec2(index: usize, qubits: &[&Qubit], masks: &[usize]) -> Vec<usi
     res
 }
 
+pub fn indices_vec_with_ctrl(
+    index: usize,
+    qubits_ctrl: &[&Qubit],
+    qubits: &[&Qubit],
+    masks: &[usize],
+) -> Vec<usize> {
+    println!("indices_vec_with_ctrl");
+
+    let mut qubits = qubits.to_owned();
+    qubits.sort_by(|a, b| a.index.cmp(&b.index));
+    let mut res = Vec::with_capacity(qubits.len());
+    let mask = masks[0];
+    let mask_low = masks[1];
+    let mask_high = masks[2];
+    let control_mask = 1usize << qubits_ctrl[0].index;
+    let basis_0 = (index & mask_low) + ((index & mask_high) << qubits.len()) * control_mask;
+    res.push(basis_0);
+    if qubits.len() == 1 {
+        let basis_1 = basis_0 + mask;
+        res.push(basis_1);
+    } else if qubits.len() == 2 {
+        let target_mask1 = 1usize << qubits[1].index;
+        let target_mask2 = 1usize << qubits[0].index;
+        let basis_1 = basis_0 + target_mask1;
+        let basis_2 = basis_0 + target_mask2;
+        let basis_3 = basis_1 + target_mask2;
+        res.push(basis_1);
+        res.push(basis_2);
+        res.push(basis_3);
+    } else {
+        // TODO
+        unimplemented!();
+    }
+
+    res
+}
+
 impl QuantumMachine for QuantumSimulator {
     fn measure(&mut self, qubit: &Qubit) -> MeasuredResult {
         let (upper_mask, lower_mask) = mask_pair(qubit);
@@ -202,83 +256,20 @@ impl SingleGateApplicator for QuantumSimulator {
     fn apply_single(&mut self, matrix: &Array2<Complex<f64>>, qubit: &Qubit) {
         self.apply2(&[qubit], matrix);
     }
-    // fn apply_single(&mut self, matrix: &Array2<Complex<f64>>, qubit: &Qubit) {
-    //     self.apply(&[qubit], matrix);
-    // }
-    // fn apply_single(&mut self, matrix: &Array2<Complex<f64>>, qubit: &Qubit) {
-    //     let mask = 1usize << qubit.index;
-    //     let mask_low = mask - 1;
-    //     let mask_high = !mask_low;
-    //     for state_index in 0..self.dim >> 1 {
-    //         let basis_0 = (state_index & mask_low) + ((state_index & mask_high) << 1);
-    //         let basis_1 = basis_0 + mask;
-    //         println!("{} {}", basis_0, basis_1);
-    //         let cval_0 = self.states[basis_0];
-    //         let cval_1 = self.states[basis_1];
-    //         println!("{} {}", cval_0, cval_1);
-    //         // self.states[basis_0] =
-    //         //     matrix.get((0, 0)).unwrap() * cval_0 + matrix.get((0, 1)).unwrap() * cval_1;
-    //         // self.states[basis_1] =
-    //         //     matrix.get((1, 0)).unwrap() * cval_0 + matrix.get((1, 1)).unwrap() * cval_1;
-    //         let new_values = matrix.dot(&array![cval_0, cval_1]);
-    //         self.states[basis_0] = new_values[0];
-    //         self.states[basis_1] = new_values[1];
-    //     }
-    // }
+    fn apply_single_with_ctrl(
+        &mut self,
+        matrix: &Array2<Complex<f64>>,
+        qubit_ctrl: &Qubit,
+        qubit: &Qubit,
+    ) {
+        self.apply_with_ctrl(&[qubit_ctrl], &[qubit], matrix);
+    }
 }
 
 impl DoubleGateApplicator for QuantumSimulator {
     fn apply_double(&mut self, matrix: &Array2<Complex<f64>>, qubit1: &Qubit, qubit2: &Qubit) {
         self.apply2(&[qubit1, qubit2], matrix);
     }
-    // fn apply_double(&mut self, matrix: &Array2<Complex<f64>>, qubit1: &Qubit, qubit2: &Qubit) {
-    //     self.apply(&[qubit1, qubit2], matrix);
-    // }
-    // fn apply_double(&mut self, matrix: &Array2<Complex<f64>>, qubit1: &Qubit, qubit2: &Qubit) {
-    //     let qubits = &[qubit1, qubit2];
-    //     let qubits_size = qubits.len();
-    //     let min_qubit_index = cmp::min(qubit1.index, qubit2.index);
-    //     let max_qubit_index = cmp::max(qubit1.index, qubit2.index);
-    //     let min_qubit_mask = 1usize << min_qubit_index;
-    //     let max_qubit_mask = 1usize << (max_qubit_index - 1);
-    //     // 間の部分（例えば2bitゲートでindexが0と2の場合、間のゲートがないindex1の部分）
-    //     let low_mask = min_qubit_mask - 1;
-    //     let mid_mask = (max_qubit_mask - 1) ^ low_mask;
-    //     let high_mask = !(max_qubit_mask - 1);
-    //     // let target_mask1 = 1 << qubit1.index;
-    //     // let target_mask2 = 1 << qubit2.index;
-    //     let target_mask1 = 1usize << qubit2.index;
-    //     let target_mask2 = 1usize << qubit1.index;
-    //     // loop variables
-    //     for state_index in 0..self.dim >> qubits_size {
-    //         // create index
-    //         let basis_0 = (state_index & low_mask)
-    //             + ((state_index & mid_mask) << 1)
-    //             + ((state_index & high_mask) << 2);
-    //         // gather index
-    //         let basis_1 = basis_0 + target_mask1;
-    //         let basis_2 = basis_0 + target_mask2;
-    //         let basis_3 = basis_1 + target_mask2;
-
-    //         println!("{} {} {} {}", basis_0, basis_1, basis_2, basis_3);
-
-    //         // fetch values
-    //         let cval_0 = self.states[basis_0];
-    //         let cval_1 = self.states[basis_1];
-    //         let cval_2 = self.states[basis_2];
-    //         let cval_3 = self.states[basis_3];
-
-    //         // set values
-    //         // println!("{} matrix: {}", state_index, matrix);
-    //         // println!("{} cval: {}", state_index, cval);
-    //         let new_values = matrix.dot(&array![cval_0, cval_1, cval_2, cval_3]);
-    //         // println!("{} new_values: {}", state_index, new_values);
-    //         self.states[basis_0] = new_values[0];
-    //         self.states[basis_1] = new_values[1];
-    //         self.states[basis_2] = new_values[2];
-    //         self.states[basis_3] = new_values[3];
-    //     }
-    // }
 }
 
 impl TripleGateApplicator for QuantumSimulator {
