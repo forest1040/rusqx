@@ -158,6 +158,7 @@ pub fn indices_vec2(index: usize, qubits: &[&Qubit], masks: &[usize]) -> Vec<usi
 }
 
 // TODO: indices_vec2と統合
+// TODO: たんなるシングルゲートになっている。。（制御が効いていない。。）
 pub fn indices_vec_with_ctrl(
     index: usize,
     qubits_ctrl: &[&Qubit],
