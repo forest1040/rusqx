@@ -26,7 +26,9 @@ impl QuantumSimulator {
             let indices = indices_vec(i, qubits, &masks);
             println!("indices_vec: {:?}", indices);
             let values = indices.iter().map(|&i| self.states[i]).collect::<Vec<_>>();
+            println!("matrix: {}", matrix);
             let new_values = matrix.dot(&arr1(&values));
+            println!("new_values: {}", new_values);
             for (&i, nv) in indices.iter().zip(new_values.to_vec()) {
                 self.states[i] = nv;
             }
@@ -44,22 +46,18 @@ impl QuantumSimulator {
         println!("masks: {:?}", masks);
         let qsize = qubits_ctrl.len() + qubits.len();
         for i in 0..self.dim >> qsize {
-            let indices = indices_vec_with_ctrl(i, qubits_ctrl, qubits, &masks);
-            println!("indices_vec_with_ctrl: {:?}", indices);
-            let values = indices.iter().map(|&i| self.states[i]).collect::<Vec<_>>();
-            // 制御ビットがついて4x1の行列になるため、回路側の行列を併せる
-            // flattenで1次元にしてしまってよい？
-            // let fmatrix = Array::from_iter(matrix.iter()); //matrix.flatten();
-            // let new_values = fmatrix.dot(&arr1(&values));
-            // for (&i, nv) in indices.iter().zip(new_values.to_vec()) {
-            //     self.states[i] = nv;
-            // }
+            // // TODO: matrixは、2x2のターゲットビットのため、qubitsに対応する部分のindexを取って計算する？
 
-            // TODO: 取り敢えず1制御ビットと1回路固定で実装する
-            self.states[indices[0]] =
-                matrix.get((0, 0)).unwrap() * values[0] + matrix.get((0, 1)).unwrap() * values[1];
-            self.states[indices[1]] =
-                matrix.get((1, 0)).unwrap() * values[2] + matrix.get((1, 1)).unwrap() * values[3];
+            // control_qubit_index == 0 の場合
+            let indices = indices_vec2(i, qubits_ctrl, qubits, &masks);
+            println!("indices_vec: {:?}", indices);
+            let values = indices.iter().map(|&i| self.states[i]).collect::<Vec<_>>();
+            //println!("matrix: {}", matrix);
+            let new_values = matrix.dot(&arr1(&values));
+            println!("new_values: {}", new_values);
+            for (&i, nv) in indices.iter().zip(new_values.to_vec()) {
+                self.states[i] = nv;
+            }
         }
     }
 
@@ -68,6 +66,31 @@ impl QuantumSimulator {
             println!("{:0>4b}> {}", i, self.states[i]);
         }
     }
+}
+
+pub fn indices_vec2(
+    index: usize,
+    qubits_ctl: &[&Qubit],
+    qubits_tgt: &[&Qubit],
+    masks: &[usize],
+) -> Vec<usize> {
+    // control_qubit_index == 0 の場合
+    let mut res = Vec::with_capacity(2);
+    let control_mask = 1usize << qubits_ctl[0].index;
+    //let mask = masks[0];
+    let mask_low = masks[1];
+    let mask_high = masks[2];
+    //let basis_0 = (index & mask_low) + ((index & mask_high) << qubits.len());
+    let basis_0 = (index & mask_low) + ((index & mask_high) << 2) + control_mask;
+    res.push(basis_0);
+    //let basis_1 = basis_0 + mask;
+    let target_mask = 1usize << qubits_tgt[0].index;
+    //let target_mask = 1usize << 1;
+    let basis_1 = basis_0 + target_mask;
+    //let basis_1 = basis_0 + 1;
+    res.push(basis_1);
+
+    res
 }
 
 pub fn mask_vec(qubits: &[&Qubit]) -> Vec<usize> {
@@ -152,6 +175,8 @@ pub fn indices_vec_with_ctrl(
     qubits_tgt: &[&Qubit],
     masks: &[usize],
 ) -> Vec<usize> {
+    // TODO: 本来、制御ビット部分は計算不要なはず
+
     //    let mut qubits = qubits.to_owned();
     let mut qubits = qubits_ctl.to_vec();
     qubits.append(&mut qubits_tgt.to_vec());
@@ -161,18 +186,29 @@ pub fn indices_vec_with_ctrl(
     let mask = masks[0];
     let mask_low = masks[1];
     let mask_high = masks[2];
+    // TODO: 複数ビット対応
     let control_mask = 1usize << qubits_ctl[0].index;
-    let basis_0 = (index & mask_low) + ((index & mask_high) << qubits.len()) * control_mask;
+    //let control_mask = 1usize << 0;
+    //let basis_0 = (index & mask_low) + ((index & mask_high) << qubits.len()) + control_mask;
+    let basis_0 = (index & mask_low) + ((index & mask_high) << 2) + control_mask - 1;
     res.push(basis_0);
     if qubits.len() == 1 {
         let basis_1 = basis_0 + mask;
         res.push(basis_1);
     } else if qubits.len() == 2 {
-        let target_mask1 = 1usize << qubits[1].index;
-        let target_mask2 = 1usize << qubits[0].index;
-        let basis_1 = basis_0 + target_mask1;
-        let basis_2 = basis_0 + target_mask2;
-        let basis_3 = basis_1 + target_mask2;
+        // TODO: 複数ビット対応
+        //let target_mask = 1usize << control_mask;
+        let target_mask = 1usize << qubits_tgt[0].index;
+        //let target_mask = 1usize << 1;
+
+        // let target_mask1 = 1usize << qubits[1].index;
+        // let target_mask2 = 1usize << qubits[0].index;
+        // let basis_1 = basis_0 + target_mask1;
+        // let basis_2 = basis_0 + target_mask2;
+        // let basis_3 = basis_1 + target_mask2;
+        let basis_1 = basis_0 + target_mask;
+        let basis_2 = basis_0 + 1;
+        let basis_3 = basis_1 + 1;
         res.push(basis_1);
         res.push(basis_2);
         res.push(basis_3);

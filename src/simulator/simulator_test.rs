@@ -208,3 +208,42 @@ mod tests {
         }
     }
 }
+
+// fn apply(&mut self, qubits: &[&Qubit], matrix: &Array2<Complex<f64>>) {
+//     let qubits_size = qubits.len();
+//     let masks = mask_vec(qubits);
+//     for i in 0..self.dim >> qubits_size {
+//         let indices = indices_vec(i, qubits, &masks, qubits_size);
+//         let values = indices.iter().map(|&i| self.states[i]).collect::<Vec<_>>();
+//         let new_values = matrix.dot(&arr1(&values));
+//         for (&i, nv) in indices.iter().zip(new_values.to_vec()) {
+//             self.states[i] = nv;
+//         }
+//     }
+// }
+
+// fn mask_vec(qubits: &[&Qubit]) -> Vec<usize> {
+//     let mut qubits = qubits.to_owned();
+//     qubits.sort_by(|a, b| a.index.cmp(&b.index));
+//     let mut res = vec![0; qubits.len() + 1];
+//     res[0] = 0xFFFF_FFFF_FFFF_FFFFusize << (qubits[qubits.len() - 1].index + 1);
+//     for i in 1..qubits.len() {
+//         res[i] = (0xFFFF_FFFF_FFFF_FFFFusize << (qubits[qubits.len() - i - 1].index + 1))
+//             | (!(0xFFFF_FFFF_FFFF_FFFFusize << (qubits[qubits.len() - i].index)));
+//     }
+//     res[qubits.len()] = !(0xFFFF_FFFF_FFFF_FFFFusize << qubits[0].index);
+//     res
+// }
+
+// fn indices_vec(index: usize, qubits: &[&Qubit], mask: &[usize], qubits_size: usize) -> Vec<usize> {
+//     let imask = (0..qubits_size + 1)
+//         .map(|s| (index << (qubits_size - s)) & mask[s])
+//         .fold(0, |acc, m| acc | m);
+//     (0..1 << qubits_size)
+//         .map(|i| {
+//             (0..qubits_size).fold(imask, |acc, j| {
+//                 acc | ((i >> (qubits_size - 1 - j) & 0b1) << qubits[j].index)
+//             })
+//         })
+//         .collect()
+// }
