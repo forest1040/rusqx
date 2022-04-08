@@ -31,8 +31,8 @@ fn main() {
         // sim.X(&qubits[0]);
         // sim.CNOT(&qubits[0], &qubits[1]);
 
-        sim.X(&qubits[0]);
-        sim.X_C(&qubits[0], &qubits[1]);
+        // sim.X(&qubits[0]);
+        // sim.X_C(&qubits[0], &qubits[1]);
 
         //sim.X_C(&qubits[1], &qubits[0]);
 
@@ -44,6 +44,9 @@ fn main() {
 
         // sim.X(&qubits[2]);
         // sim.CNOT(&qubits[2], &qubits[3]);
+
+        sim.X(&qubits[2]);
+        sim.X_C(&qubits[2], &qubits[3]);
 
         //assert_eq!(sim.measure(&qubits[0]), sim.measure(&qubits[1]));
 
