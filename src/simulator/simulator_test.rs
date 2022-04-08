@@ -1,12 +1,9 @@
-use crate::Qubit;
-use std::cmp;
-
 #[cfg(test)]
 mod tests {
-    use crate::simulator::simulator::{indices_vec2, mask_vec2};
-
-    use super::*;
-    use Qubit;
+    use crate::simulator::simulator::{index_pair, indices_vec, mask_pair, mask_vec};
+    use crate::Qubit;
+    use num::Complex;
+    use std::cmp;
 
     #[test]
     fn test_single_gate() {
@@ -96,12 +93,12 @@ mod tests {
         let dim = 16;
         let qubit1 = &Qubit { index: 1 };
         let qubits = &[qubit1];
-        let masks = mask_vec2(qubits);
+        let masks = mask_vec(qubits);
         println!("mask:{:04b}", masks[0]);
         println!("mask_low:{:04b}", masks[1]);
         println!("mask_high:{:04b}", masks[2]);
         for state_index in 0..dim >> qubits.len() {
-            let indices = indices_vec2(state_index, qubits, &masks);
+            let indices = indices_vec(state_index, qubits, &masks);
             println!("i[{}] {:?}", state_index, indices);
         }
     }
@@ -112,13 +109,102 @@ mod tests {
         let qubit1 = &Qubit { index: 3 };
         let qubit2 = &Qubit { index: 2 };
         let qubits = &[qubit1, qubit2];
-        let masks = mask_vec2(qubits);
+        let masks = mask_vec(qubits);
         println!("mask:{:04b}", masks[0]);
         println!("mask_low:{:04b}", masks[1]);
         println!("mask_high:{:04b}", masks[2]);
         for state_index in 0..dim >> qubits.len() {
-            let indices = indices_vec2(state_index, qubits, &masks);
+            let indices = indices_vec(state_index, qubits, &masks);
             println!("i[{}] {:?}", state_index, indices);
+        }
+    }
+
+    #[test]
+    fn test_mask_pair() {
+        let qubit = Qubit { index: 12 };
+        let (upper_mask, lower_mask) = mask_pair(&qubit);
+        // upper_maskは、index+1が0になる
+        assert_eq!(
+            upper_mask,
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11100000_00000000usize
+        );
+        // lower_maskは反転
+        assert_eq!(
+            lower_mask,
+            0b00000000_00000000_00000000_00000000_00000000_00000000_00001111_11111111usize
+        );
+
+        let qubit = Qubit { index: 0 };
+        let (upper_mask, lower_mask) = mask_pair(&qubit);
+        println!("qubit index: {}", qubit.index);
+        println!("upper_mask: {:0>64b}", upper_mask);
+        println!("lower_mask: {:0>64b}", lower_mask);
+
+        let qubit = Qubit { index: 1 };
+        let (upper_mask, lower_mask) = mask_pair(&qubit);
+        println!("qubit index: {}", qubit.index);
+        println!("upper_mask: {:0>64b}", upper_mask);
+        println!("lower_mask: {:0>64b}", lower_mask);
+
+        let qubit = Qubit { index: 2 };
+        let (upper_mask, lower_mask) = mask_pair(&qubit);
+        println!("qubit index: {}", qubit.index);
+        println!("upper_mask: {:0>64b}", upper_mask);
+        println!("lower_mask: {:0>64b}", lower_mask);
+    }
+
+    #[test]
+    fn test_index_pair() {
+        let qubit = Qubit { index: 13 };
+        let (upper_mask, lower_mask) = mask_pair(&qubit);
+        let (iz, io) = index_pair(
+            0b01011101_11111011_11011111usize,
+            &qubit,
+            upper_mask,
+            lower_mask,
+        );
+        assert_eq!(iz, 0b10111011_11011011_11011111usize);
+        // println!(
+        //     "0b10111011_11011011_11011111usize: {}",
+        //     0b10111011_11011011_11011111usize
+        // );
+
+        assert_eq!(io, 0b10111011_11111011_11011111usize);
+        // println!(
+        //     "0b10111011_11111011_11011111usize: {}",
+        //     0b10111011_11111011_11011111usize
+        // );
+
+        // let qubit = Qubit { index: 3 };
+        // let (upper_mask, lower_mask) = mask_pair(&qubit);
+        // let (iz, io) = index_pair(2, &qubit, upper_mask, lower_mask);
+        // println!("iz: {}", iz);
+        // println!("io: {}", io);
+    }
+
+    #[test]
+    fn test_zero_norm_sqr() {
+        let states_count = 4;
+        let mut states = vec![Complex::new(0., 0.); 1 << states_count];
+        states[0] = Complex::new(1., 0.);
+
+        let qubit = Qubit { index: 0 };
+        let (upper_mask, lower_mask) = mask_pair(&qubit);
+        let zero_norm_sqr: f64 = (0..states.len() >> 1)
+            .map(|i| states[index_pair(i, &qubit, upper_mask, lower_mask).0].norm_sqr())
+            .sum();
+        println!("zero_norm_sqr: {}", zero_norm_sqr);
+
+        for i in 0..states.len() >> 1 {
+            println!("i:{} {:0>8b}", i, i);
+            let (iz, io) = index_pair(i, &qubit, upper_mask, lower_mask);
+            // 2進数 8桁表示
+            println!("iz: {} {:0>8b}", iz, iz);
+            println!("io: {} {:0>8b}", io, io);
+            let state = states[iz];
+            println!("state: {}", state);
+            let norm_sqr = state.norm_sqr();
+            println!("norm_sqr: {}", norm_sqr);
         }
     }
 }
