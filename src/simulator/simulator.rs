@@ -63,7 +63,7 @@ impl QuantumSimulator {
 
     pub fn show(&self) {
         for i in 0..self.dim {
-            println!("{:0>4b}> {}", i, self.states[i]);
+            println!("{:0>width$b}> {}", i, self.states[i], width = self.dim >> 2);
         }
     }
 }
